@@ -1,11 +1,11 @@
+import random
+
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 from framework.webapp import WebApp
-import time
 
 
 class AdDesignPageLocator(object):
-
     AD_DESIGN_TAB = (By.XPATH, "//a[contains(@href, 'addesign')]")
     CREATE_AD_DESIGN_BUTTON = (By.ID, "createAdDesignBtn")
     MODAL_ID = (By.ID, "createAdDesignModal")
@@ -15,6 +15,9 @@ class AdDesignPageLocator(object):
     SELECT_BTN = (By.XPATH, "//div[@id='selectedByPublishedPosts']//tbody/tr//button")
     ERROR_LABEL = (By.CLASS_NAME, "error_message")
     LOADING_OVERLAY = (By.CLASS_NAME, "loading-overlay-popups")
+    ADS_BLOCK = (By.XPATH, "//div[@class='ads-block']")
+    ACTION_ICONS_XPATH = "(//div[@class='ads-block--content'])[{}]/div[2]/div/div/button"
+    ADD_BLOCK_ID = ""
 
 
 class AdDesignPage(WebApp):
@@ -156,3 +159,22 @@ class AdDesignPage(WebApp):
         elements = self.wait_for_elements(selector)
         for element in elements:
             assert element.get_attribute('data-pageid') == pageid
+
+    def verify_ad_design_page_is_not_empty(self):
+        # TODO add new ad design if page is empty
+        elements = self.wait_for_elements(AdDesignPageLocator.ADS_BLOCK)
+        assert len(elements) > 0
+
+    def hover_over_ad_design_block(self):
+        ad_designs = self.wait_for_elements(AdDesignPageLocator.ADS_BLOCK)
+        ad_design = random.choice(ad_designs)
+        action = ActionChains(self.driver.instance)
+        action.move_to_element(ad_design).perform()
+        # in UI index is plus 1
+        AdDesignPageLocator.ADD_BLOCK_ID = (ad_designs.index(ad_design))+1
+
+    def verify_action_icons_visible(self):
+        icon = (By.XPATH, AdDesignPageLocator.ACTION_ICONS_XPATH.format(AdDesignPageLocator.ADD_BLOCK_ID))
+        action_icons = self.wait_for_elements(icon)
+        if len(action_icons) != 5:
+            raise AssertionError("Found {} actions icons, expected to find 5".format(len(action_icons)))
